@@ -1,28 +1,37 @@
 #!/usr/bin/env python
 
-from plover.translation import Translation
-from plover.steno import Stroke
+from plover import steno
 from plover import system
+
+from plover_stroke import BaseStroke
+
+
+class Stroke(BaseStroke):
+    pass
+
 
 def toggle_key(translator, stroke, cmdline):
     # Toggle keys of previous stroke
-    toggles = [key.strip().replace(" ","") for key in cmdline.split(',')]
+    toggles = [key.strip().replace(" ", "") for key in cmdline.split(",")]
     translations = translator.get_state().translations
     if not translations:
         return
     t = translations[-1]
     translator.untranslate_translation(t)
-    
-    keys = set(t.strokes[-1].steno_keys)
-    allKeys = set(system.KEYS)
-    
+
+    Stroke.setup(
+        system.KEYS, system.IMPLICIT_HYPHEN_KEYS, system.NUMBER_KEY, system.NUMBERS
+    )
+    keys = Stroke(t.strokes[-1].rtfcre).keys()
+
     for key in toggles:
         if key in keys:
             keys.remove(key)
-        elif key in allKeys:
-            keys.add(key)
-    
-    translator.translate_stroke(Stroke(keys))
+        else:
+            keys.append(key)
+
+    translator.translate_stroke(steno.Stroke(keys))
+
 
 def stroke_negative(translator, stroke, cmdline):
     # Toggle ALL keys of previous stroke
@@ -31,13 +40,16 @@ def stroke_negative(translator, stroke, cmdline):
         return
     t = translations[-1]
     translator.untranslate_translation(t)
-    keys = set(t.strokes[-1].steno_keys)
-    allKeys = set(system.KEYS)
-    
-    for key in allKeys:
+
+    Stroke.setup(
+        system.KEYS, system.IMPLICIT_HYPHEN_KEYS, system.NUMBER_KEY, system.NUMBERS
+    )
+    keys = Stroke(t.strokes[-1].rtfcre).keys()
+
+    for key in system.KEYS:
         if key in keys:
             keys.remove(key)
         else:
-            keys.add(key)
-    
-    translator.translate_stroke(Stroke(keys))
+            keys.append(key)
+
+    translator.translate_stroke(steno.Stroke(keys))
